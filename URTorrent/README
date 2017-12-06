@@ -1,0 +1,12 @@
+CSC 254/457: URTorrent
+
+Run: $ URTorrent <port> <torrent file>
+
+Acceptable commands:
+
+- metainfo : This will show all info about the given metainfo file
+- announce : Sends a GET request to the tracker and displays the response
+- trackerinfo : This will display the output of the last successful tracker response
+- show : This will display the list of our current peers and some stats about them
+- status : This will print out the status of our download
+
