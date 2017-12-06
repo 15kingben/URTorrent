@@ -1,0 +1,62 @@
+treatmelikeapirate.mp3
+leech
+complete	| downloaded	| incomplete	| interval	| min interval
+------------------------------------------------------------------------------
+9 		| NA 		| 10 		| 1800 		| NA
+------------------------------------------------------------------------------
+
+Peer List:
+127.0.0.1	|	7001
+127.0.0.1	|	7000
+handshaking with peer: 127.0.0.1 7000
+client responded with peerid: b'c3ebb1441437d5912867b15a054b75e59a919739'
+recieved connection from: 127.0.0.1
+recieved handshake from peer: b'c3ebb1441437d5912867b15a054b75e59a919739'
+complete	| downloaded	| incomplete	| interval	| min interval
+------------------------------------------------------------------------------
+9 		| NA 		| 10 		| 1800 		| NA
+------------------------------------------------------------------------------
+
+Peer List:
+127.0.0.1	|	7001
+127.0.0.1	|	7000
+sending bitfield to peer: 127.0.0.1 7000
+000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+scheduling download
+recieved bitfield from peer: 111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
+downlaoding form peers
+requesting block (0) from peer: 127.0.0.1 7000
+3904 65536
+recieved piece: 0 offset 0
+65536
+hash not correct
+recieved piece: 0 offset 16384
+65536
+hash not correct
+recieved piece: 0 offset 32768
+65536
+hash not correct
+recieved piece: 0 offset 49152
+65536
+hash complete
+downlaoding form peers
+requesting block (1) from peer: 127.0.0.1 7000
+3904 65536
+downlaoding form peers
+requesting block (2) from peer: 127.0.0.1 7000
+3904 65536
+downlaoding form peers
+requesting block (3) from peer: 127.0.0.1 7000
+3904 65536
+downlaoding form peers
+requesting block (4) from peer: 127.0.0.1 7000
+3904 65536
+downlaoding form peers
+requesting block (1) from peer: 127.0.0.1 7000
+3904 65536
+downlaoding form peers
+requesting block (2) from peer: 127.0.0.1 7000
+3904 65536
+downlaoding form peers
+requesting block (3) from peer: 127.0.0.1 7000
+3904 65536
