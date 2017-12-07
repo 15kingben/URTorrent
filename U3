@@ -23,13 +23,8 @@ import requests
 MODE_OVERRIDE = False
 speed = .3
 
-# if len(sys.argv) > 3 and sys.argv[3] == "True":
-#     MODE_OVERRIDE = True
-
-# Debug Level
-DEBUG = 1
-if len(sys.argv) > 3:
-    DEBUG = int(sys.argv[3])
+if len(sys.argv) > 3 and sys.argv[3] == "True":
+    MODE_OVERRIDE = True
 
 def rand_sleep(rang):
     return random.random() * speed
@@ -76,8 +71,7 @@ class Peer(object):
 
     def schedule_keepalive(self, stop):
         client = self.socket
-        if DEBUG > 1:
-            print("sending keepalive to peer:" , ip_dot(self.ip.encode()), int.from_bytes(self.port.encode(), byteorder='big'))
+        print("sending keepalive to peer:" , ip_dot(self.ip.encode()), int.from_bytes(self.port.encode(), byteorder='big'))
         if client == None:
             print("cant send keepalive message")
             return
@@ -90,13 +84,11 @@ class Peer(object):
 
     def handshake(self, peer):
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        if DEBUG > 0:
-            print("handshaking with peer:", ip_dot(peer[0].encode()), int.from_bytes(peer[1].encode(), byteorder='big'))
+        print("handshaking with peer:", ip_dot(peer[0].encode()), int.from_bytes(peer[1].encode(), byteorder='big'))
         try:
             client.connect((ip_dot(peer[0].encode()), int.from_bytes(peer[1].encode(), byteorder='big')))
         except:
-            if DEBUG > 0:
-                print("couldnt connect to " + ip_dot(peer[0].encode()) + ":"+ str(btoi(peer[1].encode())))
+            print("couldnt connect to " + ip_dot(peer[0].encode()) + ":"+ str(btoi(peer[1].encode())))
             return
         message = (bytes([18]) + b'URTorrent protocol' +
                     bytes(8) + info_hash.digest() + peer_id.digest())
@@ -111,8 +103,7 @@ class Peer(object):
         peer_list[( ip_b(hn[0]).decode(), port_b(hn[1]).decode())] = {"status" : (1,0,1,0), "peer_id" : data[1+18+8+20:], "bit_field" : [0]*len(file_hashes)}
         # print(hn[0], btoi(port_b(hn[1])))
         self.peer_id = data[1+18+8+20:]
-        if DEBUG > 0:
-            print("client responded with peerid:", binascii.hexlify(data[1+18+8+20:]))
+        print("client responded with peerid:", binascii.hexlify(data[1+18+8+20:]))
         global peer_map
 
         if self.peer_id not in peer_map: # not the canonical object, set up ip info and client socket
@@ -148,21 +139,18 @@ class Peer(object):
         if self.peer_id not in peer_map: # not the canonical object, set up listening on old object
             peer_map[self.peer_id] = self
         threading.Thread(target=peer_map[self.peer_id].listenToClient, args=(client, None)).start()
-        if DEBUG > 0:
-            print("recieved handshake from peer:", binascii.hexlify(pid))
+        print("recieved handshake from peer:", binascii.hexlify(pid))
 
         ### Check with tracker and handshake all known
         # command_announce()
-        if DEBUG > 0:
-            print("handshaking new peers")
+        print("handshaking new peers")
         threading.Thread(target=handshake_new_peers).start()
 
 
 
     def update_choke(self, choke):
         client = self.socket
-        if DEBUG > 1:
-            print("sending choke message (" +str(choke) + ") to peer:" , ip_dot(self.ip.encode()), int.from_bytes(self.port.encode(), byteorder='big'))
+        print("sending choke message (" +str(choke) + ") to peer:" , ip_dot(self.ip.encode()), int.from_bytes(self.port.encode(), byteorder='big'))
         if client == None:
             print("cant send choke message")
             return
@@ -183,8 +171,7 @@ class Peer(object):
 
     def update_interested(self, interested):
         client = self.socket
-        if DEBUG > 1:
-            print("sending interest message (" +str(interested) + ") to peer:" , ip_dot(self.ip.encode()), int.from_bytes(self.port.encode(), byteorder='big'))
+        print("sending interest message (" +str(interested) + ") to peer:" , ip_dot(self.ip.encode()), int.from_bytes(self.port.encode(), byteorder='big'))
         if client == None:
             print("cant send interest message")
             return
@@ -194,20 +181,18 @@ class Peer(object):
         else:
             message = (itob(1, 4) + bytes([3]))
         self.send_wrapper(client, message)
-        self.am_interested = 1 if interested == "interested" else 0
+        self.am_interested = 1 if choke == "interested" else 0
 
     def send_bitfield(self):
         client = self.socket
 
-        if DEBUG > 1:
-            print("sending bitfield to peer:", ip_dot(self.ip.encode()), int.from_bytes(self.port.encode(), byteorder='big'))
+        print("sending bitfield to peer:", ip_dot(self.ip.encode()), int.from_bytes(self.port.encode(), byteorder='big'))
         if client == None:
             print("cant send bitfield")
             return
 
         global bit_field
-        if DEBUG > 1:
-            print(''.join([str(i) for i in bit_field]))
+        print(''.join([str(i) for i in bit_field]))
         bf = ''.join([str(i) for i in bit_field])
         if len(bf) % 8 != 0:
             bf += '0'*(8 - len(bf) % 8)
@@ -227,21 +212,18 @@ class Peer(object):
 
     def download_block(self, index):
         client = self.socket
-        if DEBUG > 1:
-            print("requesting block (" +str(index) + ") from peer:" , ip_dot(self.ip.encode()), int.from_bytes(self.port.encode(), byteorder='big'))
+        print("requesting block (" +str(index) + ") from peer:" , ip_dot(self.ip.encode()), int.from_bytes(self.port.encode(), byteorder='big'))
         if client == None:
             print("cant send request message")
             return
 
         offset = 0
 
-        # piece length is either standard or the shorter final piece
+        # print(len(bit_field))
         pl = final_piece_length if index == (len(bit_field) - 1) else piece_length
         while offset < pl:
-            # download blocks 1 block_length at a time
             blen = min(pl - offset, block_length)
             message = itob(13, 4) + bytes([6]) + itob(index, 4) + itob(offset, 4) + itob(blen, 4)
-            # the send wrapper simply updates the keep-alive timer
             self.send_wrapper(client, message)
             offset += block_length
             time.sleep(speed)
@@ -250,8 +232,7 @@ class Peer(object):
     def parse_bitfield(self, client, bitstr_data, length):
         bf = [int(i) for i in get_bits(bitstr_data)]
         bf = bf[:len(bit_field)] #bits per byte
-        if DEBUG > 1:
-            print("recieved bitfield from peer:", ''.join([str(i) for i in bf]))
+        print("recieved bitfield from peer:", ''.join([str(i) for i in bf]))
         self.bitfield = bf
         self.update_bitfield()
 
@@ -259,7 +240,7 @@ class Peer(object):
         if self.peer_choking == 1:
             for i in range(0, len(bit_field)):
                 if self.bitfield[i] == 1:
-                    if self.peer_id in piece_map[i]:
+                    self.peer_id in piece_map[i]:
                         piece_map[i].remove(self.peer_id)
         else:
             for i in range(0, len(bit_field)):
@@ -269,8 +250,7 @@ class Peer(object):
 
     def send_have(self, bitindex):
         client = self.socket
-        if DEBUG > 1:
-            print("sending have message (" +str(bitindex) + ") to peer:" , ip_dot(self.ip.encode()), int.from_bytes(self.port.encode(), byteorder='big'))
+        print("sending have message (" +str(bitindex) + ") to peer:" , ip_dot(self.ip.encode()), int.from_bytes(self.port.encode(), byteorder='big'))
         if client == None:
             print("cant send have message")
             return
@@ -280,14 +260,8 @@ class Peer(object):
 
     def send_piece(self, piece_index, offset, length):
         if piece_index not in file_pieces:
-            if DEBUG > 1:
-                print("requested index not found")
+            print("requested index not found")
         block = file_pieces[piece_index][offset:offset+length]
-
-        lock = threading.Lock()
-        with lock:
-            global uploaded
-            uploaded += len(block)
 
         # print("sending piece message (" +str(piece_index) + ") to peer:" , ip_dot(self.ip.encode()), int.from_bytes(self.port.encode(), byteorder='big'))
         client = self.socket
@@ -320,14 +294,12 @@ class Peer(object):
                     else:
                         msg_len = btoi(data[:4])
                         if msg_len == 0:  # keep-alive
-                            if DEBUG > 1:
-                                print("recieved keepalive")
+                            print("recieved keepalive")
                             if len(data) > (4):
                                 resid = data[4:]
                             continue
                         if msg_len > block_length * 4:
-                            if DEBUG > 1:
-                                print("something fucked up")
+                            print("something fucked up")
                             resid = None
                             continue
                         while len(data) < msg_len + 4:
@@ -339,13 +311,11 @@ class Peer(object):
                         msg_id = (data[4])
                         # print("message id: " , msg_id)
                         if msg_id == 0:  #choke
-                            if DEBUG > 1:
-                                print("choked by", ip_dot(self.ip.encode()), btoi(self.port.encode()))
+                            print("choked by", ip_dot(self.ip.encode()), btoi(self.port.encode()))
                             self.peer_choking = 1
                             self.update_bitfield()
                         elif msg_id == 1: #unchoke
-                            if DEBUG > 1:
-                                print("choked by", ip_dot(self.ip.encode()), btoi(self.port.encode()))
+                            print("choked by", ip_dot(self.ip.encode()), btoi(self.port.encode()))
                             self.peer_choking = 0
                             self.update_bitfield()
                         elif msg_id == 2: #interested
@@ -353,8 +323,7 @@ class Peer(object):
                         elif msg_id == 3: #notinterested
                             self.peer_interested = 0
                         elif msg_id == 4: #have
-                            if DEBUG > 1:
-                                print("peer has " + str(btoi(data[5:])))
+                            print("peer has " + str(btoi(data[5:])))
                             self.bitfield[btoi(data[5:])] = 1
                             # print("new bitfield:", ''.join([str(i) for i in self.bitfield]))
                             self.update_bitfield()
@@ -362,16 +331,13 @@ class Peer(object):
                             self.parse_bitfield(client, data[5:], msg_len - 1)
                         elif msg_id == 6: #request
                             if btoi(data[9:13]) == 0:
-                                if DEBUG > 1:
-                                    print("peer requesting " + str(btoi(data[5:9])))
+                                print("peer requesting " + str(btoi(data[5:9])))
                             self.send_piece(btoi(data[5:9]), btoi(data[9:13]), btoi(data[13:17]))
                         elif msg_id == 7: #piece
                             global piece_builder
-                            if DEBUG > 1:
-                                print("recieved piece:", btoi(data[5:9]), "offset", btoi(data[9:13]))
+                            print("recieved piece:", btoi(data[5:9]), "offset", btoi(data[9:13]))
                             if bit_field[btoi(data[5:9])] == 1:
-                                if DEBUG > 1:
-                                    print("already have piece")
+                                print("already have piece")
                                 continue
                             pce = piece_builder[btoi(data[5:9])]
                             offset = btoi(data[9:13])
@@ -410,8 +376,7 @@ class ThreadedServer(object):
             ip = ip_b(client.getpeername()[0])
             port =port_b(client.getpeername()[1])
             peer = Peer(None, None, client, address, None)
-            if DEBUG > 0:
-                print("recieved connection from:",client.getpeername()[0])
+            print("recieved connection from:",client.getpeername()[0])
             peer.listenToClient(client, address, mode = "temp")
 
 
@@ -445,8 +410,7 @@ piece_map = []
 TIMEOUT_SECONDS = 10
 max_pending = 5
 num_pending = 0
-uploaded = 0
-total_length = 0
+
 
 def init(filename):
     if not os.path.exists(filename):
@@ -482,7 +446,6 @@ def init(filename):
             if state == "seed":
                 bit_field[pieces.index(i)] = 1
         global piece_length
-        global total_length
         piece_length = decoded["info"]["piece length"]
         total_length = decoded["info"]["length"]
         global final_piece_length
@@ -494,23 +457,18 @@ def init(filename):
         piece_builder[len(pieces) - 1] = bytes(final_piece_length)
 
 def handshake_new_peers():
-    # reannounce to find new peers
     command_announce()
     for ip_port in peer_list:
         exists = False
-        # dont handshake ourselves
         if btoi(ip_port[1].encode()) == port_number:
             continue
-        # Have we already handshaked this peer?
         for p in peer_map:
             if peer_map[p].ip is not None and (peer_map[p].ip, peer_map[p].port) == ip_port:
                 exists = True
                 break
         if exists:
             continue
-
-        if DEBUG > 0:
-            print("sending out handshake to new peer:", ip_dot(ip_port[0].encode()), btoi(ip_port[1].encode()))
+        print("sending out handshake to new peer:", ip_dot(ip_port[0].encode()), btoi(ip_port[1].encode()))
         peer = Peer(ip_port[0], ip_port[1], None, None, None)
         peer.handshake(ip_port)
 
@@ -591,27 +549,20 @@ def check_done():
 def check_hash(piece_index):
     global num_pending
     if hashlib.sha1(piece_builder[piece_index]).digest() == file_hashes[piece_index]:
-        if DEBUG > 1:
-            print("packet",piece_index,"succesfully recieved")
-        # update bit_field, and piece of file
+        print("hash complete")
         bit_field[piece_index] = 1
         file_pieces[piece_index] = piece_builder[piece_index]
-        # we reset pending status if it completes or fails
         pending_blocks[piece_index] = 0
         lock = threading.Lock()
         with lock:
             num_pending -= 1
 
-
         download_from_peers()
-        if DEBUG > 1:
-            print("current bitfield:",''.join([str(i) for i in bit_field]))
+        print("current bitfield:",''.join([str(i) for i in bit_field]))
 
-        # send a new have message to all peers
         for p in peer_map:
             peer_map[p].send_have(piece_index)
 
-        # done with the torrent, we wont close the program though b/c we are still seeding
         if check_done():
             write_file()
         return
@@ -648,8 +599,6 @@ def print_status():
         if key not in status_info:
             status_info[key] = "NA"
 
-    status_info["downloaded"] = piece_length * sum(bit_field)
-
     print("complete\t| downloaded\t| incomplete\t| interval\t| min interval")
     print("------------------------------------------------------------------------------")
     print(status_info["complete"],'\t\t|',status_info["downloaded"],'\t\t|',
@@ -663,33 +612,23 @@ def print_status():
             # print(peer, type(peer[0]), type(peer[1]))
             print( ip_dot(peer[0].encode()) + '\t|\t' + str(int.from_bytes(peer[1].encode(), byteorder='big')))
 
-def status_command():
-    print("Downloaded | Uploaded | Left | My bit field ")
-    dlded = piece_length * sum(bit_field)
-    left = total_length - dlded
-    mybf = ''.join([str(i) for i in bit_field])
-    print(dlded,'\t|',uploaded,'\t|', left, '\t|', mybf)
-
 def download_from_peers():
     time.sleep(speed)
+    print("downlaoding form peers")
     complete = True
-    # check if the torrent has been completely downloaded
     for i in range(len(bit_field)):
         if bit_field[i] == 0:
             complete = False
     if complete:
         return
 
-
     minseeds = 100000
     rarest = None
-    # the number of pending piece requests--capped at 5
     global num_pending
     for i in range(0, len(piece_map)):
         if bit_field[i] == 1:
             continue
         if pending_blocks[i] != 0:
-            # reset a pending block's status if the download failed
             if time.time() - pending_blocks[i] > TIMEOUT_SECONDS:
                 pending_blocks[i] = 0
                 lock = threading.Lock()
@@ -697,20 +636,17 @@ def download_from_peers():
                     num_pending -= 1
             else:
                 continue
-        # pick the rarest piece to download
         if minseeds > len(piece_map[i]) and len(piece_map[i]) > 0:
             minseeds = len(piece_map[i])
             rarest = i
 
-    if num_pending >= max_pending:
-        if DEBUG > 1:
-            print("too many pending")
+    if num_pending == max_pending:
+        print("too many pending")
         return
 
     if rarest is None:
         return  # already have file or nothing to be done
 
-    # pick a random peer from the min set
     p = piece_map[rarest].pop()
     piece_map[rarest].add(p)
 
@@ -720,6 +656,7 @@ def download_from_peers():
     lock = threading.Lock()
     with lock:
         num_pending += 1
+    # download_from_peers()
 
 def sched_download(delay=.5):
     download_from_peers()
@@ -729,8 +666,7 @@ def sched_download(delay=.5):
 
 
 init(torrent_file_name)
-if DEBUG > 0:
-    print(state)
+print(state)
 if state == "seed":
     load_pieces()
 # print(tracker_ip)
@@ -750,8 +686,7 @@ for i in peer_list:
 
 
 if state == "leech":
-    if DEBUG > 1:
-        print("scheduling download")
+    print("scheduling download")
     sched_download(1)
 
 # print(peer_id.hexdigest())
@@ -775,10 +710,12 @@ while True:
     elif next_command == "exit":
         break
     elif next_command == "status":
-        status_command()
+        pass
     else:
         print("command not available")
 
 if headless:
     while True:
         time.sleep(.5)
+        # if check_done():
+        #     break
